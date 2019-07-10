@@ -1,0 +1,132 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]; then
+    echo "Invalid number of arguement"
+    exit 84
+fi
+if [ ! -s $1 ]; then
+    echo "Invalid file, or the file is empty"
+    exit 84
+fi
+PROJDIR=$(cat $1 | grep ^'PROJECT_DIR' | cut -c13-)
+if [[ ! -s ${PROJDIR} ]]; then
+    echo "Project directory is unexistant or wrong format"
+    exit 84
+fi
+FILE=$PROJDIR/Makefile
+
+> $FILE
+
+NAMECONTENT=$(cat $1 | grep ^'EXEC' | cut -c6-)
+COMPCONTENT=$(cat $1 | grep ^'CC' | cut -c4-)
+LIBSDIR=$(cat $1 | grep ^'LIBS_DIR' | cut -c10-)
+SRCDIR=$(cat $1 | grep ^'SOURCES_DIR' | cut -c13-)
+HEADERDIR=$(cat $1 | grep ^'HEADERS_DIR' | cut -c13-)
+ZIP=$(cat $1 | grep ZIP | cut -c5- | head -n 1)
+ZIPFLAGS=$(cat $1 | grep ^'ZIPFLAGS' | cut -c10-)
+BCK_DIR=$(cat $1 | grep ^'BCK_DIR' | cut -c9-)
+UNZIP=$(cat $1 | grep UNZIP | cut -c7- | head -n 1)
+UNZIPFLAGS=$(cat $1 | grep UNZIPFLAGS | cut -c12- | head -n 1)
+
+if test -z "$COMPCONTENT"
+    then COMPCONTENT="gcc"
+fi
+
+IFS=";"
+i=1
+while read line
+    do
+        str=($line)
+    if [[ ${str[0]} == *.c ]]
+    then
+        SRCCONTENT[i]=${str[0]}
+        ((i++))
+    fi
+done < $1
+
+n=1
+while [ $n -ne 10 ] ; do
+    CFLAGSCONTENT[$n]=$(cat $1 | grep ^'CFLAGS' | cut -c8- | cut -d' ' -f$n)
+    n=$(($n + 1))
+done
+n=1
+while [ $n -ne 10 ] ; do
+    LDFLAGSCONTENT[$n]=$(cat $1 | grep ^'LDFLAGS' | cut -c9- | cut -d' ' -f$n)
+    n=$(($n + 1))
+done
+
+escape=""
+NAME="NAME\t\t=\t${NAMECONTENT}"
+SRC="SRC\t\t\t="
+OBJ='OBJ\t\t\t=\t$(SRC:.c=.o)'
+COMP="CC\t\t\t=\t${COMPCONTENT}"
+LIBS="LIBS\t\t="
+CFLAGS="CFLAGS\t\t=\t-I ./${HEADERDIR}/"
+LDFLAGS="LDFLAGS\t\t=\t"
+RM="RM\t\t\t=\trm -f"
+all='all:\t$(NAME)'
+compil='$(NAME): $(OBJ)\n'
+compil2='\t\t$(CC) $(OBJ) -o $(NAME) $(CFLAGS) $(LDFLAGS)'
+clean='clean:\n\t\t$(RM) $(OBJ)\n\t\t$(RM) *.g*'
+fclean='fclean:\tclean\n\t\t$(RM) $(NAME)'
+re="re:\tfclean all"
+archive2='$(SRC)'
+archive="archive:\n\t\t${ZIP} ${ZIPFLAGS} ./${BCK_DIR}/backup_1.0.${ZIP} ${archive2}\n\t\t@echo ./${BCK_DIR}/backup_1.0.${ZIP} file generated"
+revert="revert:\n\t\t${UNZIP} ${UNZIPFLAGS} ./${BCK_DIR}/backup_1.0.${UNZIP}"
+delete='delete:\n\t\t$(RM)'
+delete2=" ./${BCK_DIR}/backup_1.0.${ZIP}\n"
+PHONY=".PHONY: all clean fclean re archive revert delete"
+
+echo -e "$NAME" >> $FILE
+echo "$escape" >> $FILE
+echo -en "$SRC" >> $FILE
+n=1
+while [ -n "${SRCCONTENT[$n]}" ] ; do
+    if [ $n -eq 1 ]; then
+        echo -e "\t${SRCDIR}/${SRCCONTENT[$n]}\t\t\\" >> $FILE
+    fi
+    if [ $n -ge 2 ]; then
+        echo -e "\t\t\t\t${SRCDIR}/${SRCCONTENT[$n]}\t\t\\" >> $FILE
+    fi
+    n=$(($n + 1))
+done
+echo "$escape" >> $FILE
+echo -e "$OBJ" >> $FILE
+echo "$escape" >> $FILE
+echo -e "$COMP" >> $FILE
+echo "$escape" >> $FILE
+echo -en "$CFLAGS" >> $FILE
+n=1
+while [ -n "${CFLAGSCONTENT[$n]}" ] ; do
+    echo -ne " ${CFLAGSCONTENT[$n]}" >> $FILE
+    n=$(($n + 1))
+done
+echo -e "$escape\n" >> $FILE
+echo -en "$LDFLAGS" >> $FILE
+n=1
+while [ -n "${LDFLAGSCONTENT[$n]}" ] ; do
+    echo -ne " ${LDFLAGSCONTENT[$n]}" >> $FILE
+    n=$(($n + 1))
+done
+echo -e "$escape\n" >> $FILE
+echo -e "$RM" >> $FILE
+echo "$escape" >> $FILE
+echo -e "$all" >> $FILE
+echo "$escape" >> $FILE
+echo -ne "$compil" >> $FILE
+echo -e "$compil2" >> $FILE
+echo "$escape" >> $FILE
+echo -e "$clean" >> $FILE
+echo "$escape" >> $FILE
+echo -e "$fclean" >> $FILE
+echo "$escape" >> $FILE
+echo -e "$re" >> $FILE
+echo "$escape" >> $FILE
+echo -e "$archive" >> $FILE
+echo "$escape" >> $FILE
+echo -e "$revert" >> $FILE
+echo "$escape" >> $FILE
+echo -ne "$delete" >> $FILE
+echo -e "$delete2" >> $FILE
+echo -e "$PHONY" >> $FILE
+exit 0

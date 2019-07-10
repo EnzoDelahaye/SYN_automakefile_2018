@@ -1,0 +1,16 @@
+main.c;
+file1.c;test.h
+file2.c;mac.h
+file.c;test.h
+EXEC;test123
+PROJECT_DIR;test2
+CC;gcc
+SOURCES_DIR;.
+CFLAGS;-Wall -Wextra
+HEADERS_DIR;include
+LIBS_DIR;libdir
+BCK_DIR;backup
+ZIP;tar
+ZIPFLAGS;-cvvf
+UNZIP;tar
+UNZIPFLAGS;-xvf
