@@ -1,5 +1,5 @@
 # SYN_automakefile_2018
-Réalisation d'un automakefile permettant la création de Makefile via un fichier configi
+Réalisation d'un automakefile permettant la création de Makefile via un fichier config
 
 ## FONCTIONNEMENT
 
